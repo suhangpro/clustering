@@ -10,14 +10,25 @@ import numpy as np
 
 class DisjointSet(object):
     """
-    Disjoint-set data structure that supports union/find operations.
+    Disjoint-set data structure that supports union/find operations and do-not-merge constraints.
     """
-    def __init__(self, values):
+    def __init__(self, values, neg_constraints=None):
         if isinstance(values, int) or (isinstance(values, float) and values % 1 == 0):
             values = range(values)
         self.values = set(values)
         self.parent = dict(zip(values, values))
         self.rank = dict(zip(values, [0] * len(values)))
+        self.neg_constraints = neg_constraints
+
+        # a dict with constraints indexed by each cluster
+        if neg_constraints is not None:
+            neg_constraints_dict = {}
+            for v in self.values:
+                neg_constraints_dict[v] = set()
+            for (f, t) in self.neg_constraints:
+                neg_constraints_dict[f].add(t)
+                neg_constraints_dict[t].add(f)
+            self.neg_constraints_dict = neg_constraints_dict
 
     def find(self, v):
         p = self.parent[v]
@@ -27,20 +38,37 @@ class DisjointSet(object):
 
     def union(self, v1, v2):
         rt1, rt2 = self.find(v1), self.find(v2)
-
         # v1 and v2 are already in the same cluster
         if rt1 == rt2:
+            return
+
+        # v1 and v2 are in different clusters, but there is do-not-merge constraint
+        if self.neg_constraints is not None and (min(rt1, rt2), max(rt1, rt2)) in self.neg_constraints:
             return
 
         # v1 and v2 are in different clusters, merge them
         rk1, rk2 = self.rank[rt1], self.rank[rt2]
         if rk1 < rk2:
             self.parent[rt1] = rt2
+            parent, child = rt2, rt1
         elif rk1 > rk2:
             self.parent[rt2] = rt1
+            parent, child = rt1, rt2
         else:
             self.parent[rt2] = rt1
             self.rank[rt1] += 1
+            parent, child = rt1, rt2
+
+        # update constraints
+        if self.neg_constraints is None:
+            return
+        child_constraints = self.neg_constraints_dict[child]
+        self.neg_constraints_dict[parent].update(child_constraints)
+        for c in child_constraints:
+            self.neg_constraints_dict[c].remove(child)
+            self.neg_constraints_dict[c].add(parent)
+            self.neg_constraints.remove((min(c, child), max(c, child)))
+            self.neg_constraints.add((min(c, parent), max(c, parent)))
 
     def get_clusters(self):
         clusters = {}
@@ -133,7 +161,7 @@ def constraint_similarity_clustering(similarity, neg_constraints, threshold):
     num_samples = similarity.shape[0]
 
     # use disjoint-set data structure to maintain the clusters
-    clusters = DisjointSet(num_samples)
+    clusters = DisjointSet(num_samples, neg_constraints)
 
     # construct tuples (i, j, sim) for the pairs in the upper right triangle that meet or exceed similarity threshold
     similarity_of_pairs = [(r, c, similarity[r, c])
@@ -144,10 +172,10 @@ def constraint_similarity_clustering(similarity, neg_constraints, threshold):
     # sort the pairs according to similarity (from high to low)
     similarity_of_pairs.sort(key=lambda v: v[2], reverse=True)
 
-    # iterate through pairs, update clusters when not violating any do-not-connect constraints
+    # iterate through pairs, update clusters (when not violating any do-not-connect constraints(
     for p in similarity_of_pairs:
-        if not neg_constraints or (p[0], p[1]) not in neg_constraints:
-            clusters.union(p[0], p[1])
+        clusters.union(p[0], p[1])
+
 
     return clusters.get_clusters()
 
