@@ -62,13 +62,13 @@ class DisjointSet(object):
         # update constraints
         if self.neg_constraints is None:
             return
-        child_constraints = self.neg_constraints_dict[child]
-        self.neg_constraints_dict[parent].update(child_constraints)
-        for c in child_constraints:
+        self.neg_constraints_dict[parent].update(self.neg_constraints_dict[child])
+        for c in self.neg_constraints_dict[child]:
             self.neg_constraints_dict[c].remove(child)
             self.neg_constraints_dict[c].add(parent)
             self.neg_constraints.remove((min(c, child), max(c, child)))
             self.neg_constraints.add((min(c, parent), max(c, parent)))
+        del self.neg_constraints_dict[child]
 
     def get_clusters(self):
         clusters = {}
@@ -172,10 +172,9 @@ def constraint_similarity_clustering(similarity, neg_constraints, threshold):
     # sort the pairs according to similarity (from high to low)
     similarity_of_pairs.sort(key=lambda v: v[2], reverse=True)
 
-    # iterate through pairs, update clusters (when not violating any do-not-connect constraints(
+    # iterate through pairs, update clusters (when not violating any do-not-connect constraints)
     for p in similarity_of_pairs:
         clusters.union(p[0], p[1])
-
 
     return clusters.get_clusters()
 
