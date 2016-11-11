@@ -31,20 +31,31 @@ class DisjointSet(object):
             self.neg_constraints_dict = neg_constraints_dict
 
     def find(self, v):
+        """Find the root of v.
+
+        :param v: a node
+        :return: the root node of v
+        """
         p = self.parent[v]
         if p != v:
             self.parent[v] = self.find(p)
         return self.parent[v]
 
     def union(self, v1, v2):
+        """Union the set that contains v1 and the set that contains v2.
+
+        :param v1: node 1
+        :param v2: node 2
+        :return: bool, True if a union happens (the number of disjoint sets is reduced by 1)
+        """
         rt1, rt2 = self.find(v1), self.find(v2)
         # v1 and v2 are already in the same cluster
         if rt1 == rt2:
-            return
+            return False
 
         # v1 and v2 are in different clusters, but there is do-not-merge constraint
         if self.neg_constraints is not None and (min(rt1, rt2), max(rt1, rt2)) in self.neg_constraints:
-            return
+            return False
 
         # v1 and v2 are in different clusters, merge them
         rk1, rk2 = self.rank[rt1], self.rank[rt2]
@@ -61,7 +72,7 @@ class DisjointSet(object):
 
         # update constraints
         if self.neg_constraints is None:
-            return
+            return True
         self.neg_constraints_dict[parent].update(self.neg_constraints_dict[child])
         for c in self.neg_constraints_dict[child]:
             self.neg_constraints_dict[c].remove(child)
@@ -70,7 +81,13 @@ class DisjointSet(object):
             self.neg_constraints.add((min(c, parent), max(c, parent)))
         del self.neg_constraints_dict[child]
 
+        return True
+
     def get_clusters(self):
+        """List representation of the clusters.
+
+        :return: a list of clusters, each contains its members in a list
+        """
         clusters = {}
         for v in self.values:
             p = self.find(v)
@@ -81,7 +98,7 @@ class DisjointSet(object):
         return list(clusters.values())
 
 
-class TimedBlock():
+class TimedBlock:
     """
     Context manager that times the execution of a block of code.
     """
@@ -137,9 +154,9 @@ def constraints_from_matrix(mat, target_fn=(lambda v: v)):
     return constraint_pairs
 
 
-def vector_cluster_repr(clusters, num_samples, start_idx=0, check_completeness=True):
+def vector_cluster_repr(clusters, num_samples, start_idx=0, check_completeness=True, dtype=np.int32):
     """Convert cluster format from set of clusters to a vector containing cluster id for each data point."""
-    vec = np.zeros(num_samples)
+    vec = np.zeros(num_samples, dtype=dtype)
     seen = set()
     for i, c in zip(range(start_idx, len(clusters) + start_idx), list(clusters)):
         vec[list(c)] = i
@@ -150,31 +167,56 @@ def vector_cluster_repr(clusters, num_samples, start_idx=0, check_completeness=T
     return vec
 
 
-def constraint_similarity_clustering(similarity, neg_constraints, threshold):
+def constraint_similarity_clustering(similarity, neg_constraints, threshold=None, num_clusters=None):
     """Clustering w/ do-not-connect constraints.
 
     :param similarity: an np matrix (float32) storing the pairwise similarity between nodes
     :param neg_constraints: a set of negative constraints as 2-tuples
     :param threshold: pairs with similarity lower than threshold will not be connected
+    :param num_clusters: the wanted number of clusters; not that one of threshold and num_clusters need to be None
     :return: a list of clusters, each contains its members in a list
     """
+    if (threshold is None) + (num_clusters is None) != 1:
+        raise ValueError('One and only one of threshold and num_clusters should be specified.')
+
     num_samples = similarity.shape[0]
 
     # use disjoint-set data structure to maintain the clusters
     clusters = DisjointSet(num_samples, neg_constraints)
 
-    # construct tuples (i, j, sim) for the pairs in the upper right triangle that meet or exceed similarity threshold
-    similarity_of_pairs = [(r, c, similarity[r, c])
-                           for r in range(num_samples-1)
-                           for c in range(r+1, num_samples)
-                           if similarity[r, c] >= threshold]
+    if threshold is not None:
+        # construct tuples (i, j, sim) for the pairs in the upper right triangle that meet similarity threshold
+        similarity_of_pairs = [(r, c, similarity[r, c])
+                               for r in range(num_samples-1)
+                               for c in range(r+1, num_samples)
+                               if similarity[r, c] >= threshold]
 
-    # sort the pairs according to similarity (from high to low)
-    similarity_of_pairs.sort(key=lambda v: v[2], reverse=True)
+        # sort the pairs according to similarity (from high to low)
+        similarity_of_pairs.sort(key=lambda v: v[2], reverse=True)
 
-    # iterate through pairs, update clusters (when not violating any do-not-connect constraints)
-    for p in similarity_of_pairs:
-        clusters.union(p[0], p[1])
+        # iterate through pairs, update clusters (when not violating any do-not-connect constraints)
+        for p in similarity_of_pairs:
+            clusters.union(p[0], p[1])
+    else:
+        if num_clusters > num_samples:
+            print('Warning: {} clusters can not be found on {} samples.'.format(num_clusters, num_samples))
+
+        # construct tuples (i, j, sim) for the pairs in the upper right triangle that meet similarity threshold
+        similarity_of_pairs = [(r, c, similarity[r, c])
+                               for r in range(num_samples-1)
+                               for c in range(r+1, num_samples)]
+
+        # sort the pairs according to similarity (from high to low)
+        similarity_of_pairs.sort(key=lambda v: v[2], reverse=True)
+
+        # iterate through pairs, update clusters (when not violating any do-not-connect constraints)
+        cur_num_clusters = num_samples
+        for p in similarity_of_pairs:
+            if cur_num_clusters <= num_clusters:
+                break
+            cur_num_clusters -= clusters.union(p[0], p[1])
+        if cur_num_clusters > num_clusters:
+            print('Warning: cannot get {} clusters, got {} instead.'.format(num_clusters, cur_num_clusters))
 
     return clusters.get_clusters()
 
@@ -183,10 +225,11 @@ def main():
     parser = argparse.ArgumentParser(description='Constraint Similarity-Based Clustering.')
     parser.add_argument('similarity', type=str, help='Path to a file containing similarity matrix')
     parser.add_argument('output', type=str, help='Output file path')
-    parser.add_argument('threshold', type=float, help='Threshold for the similarity value')
+    parser.add_argument('threshold', type=float, help='Threshold, or the number of clusters when -n is turned on')
     parser.add_argument('-c', '--constraints', type=str, help='Path to a file containing constraints')
     parser.add_argument('-z', '--zero-based', action='store_true', help='Cluster ID will start from 0 if turned on')
     parser.add_argument('-d', '--distance', action='store_true', help='Distance is given rather than similarity')
+    parser.add_argument('-n', '--num-clusters', action='store_true', help='Number of clusters should be given if True')
     parser.add_argument('-v', '--verbose', action='store_true', help='Output runtime information when True')
     args = parser.parse_args()
 
@@ -195,7 +238,8 @@ def main():
         similarity = load_ndarray(args.similarity)
     if args.distance:
         similarity *= -1
-        args.threshold *= -1
+        if not args.num_clusters:
+            args.threshold *= -1
 
     # load negative constraints (do-not-link constraints)
     if args.constraints:
@@ -207,8 +251,9 @@ def main():
         neg_constraints = None
 
     # compute clusters
+    (threshold, num_clusters) = (None, int(args.threshold)) if args.num_clusters else (args.threshold, None)
     with TimedBlock('Computing clusters', verbose=args.verbose):
-        clusters = constraint_similarity_clustering(similarity, neg_constraints, args.threshold)
+        clusters = constraint_similarity_clustering(similarity, neg_constraints, threshold, num_clusters)
 
     # save results
     with TimedBlock('Converting clusters', verbose=args.verbose):
