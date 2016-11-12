@@ -174,7 +174,7 @@ def constraint_similarity_clustering(similarity, neg_constraints, threshold=None
     :param neg_constraints: a set of negative constraints as 2-tuples
     :param threshold: pairs with similarity lower than threshold will not be connected
     :param num_clusters: the wanted number of clusters; not that one of threshold and num_clusters need to be None
-    :return: a list of clusters, each contains its members in a list
+    :return: a list of clusters, each contains its members in a list; or a list of such lists if num_clusters=0
     """
     if (threshold is None) + (num_clusters is None) != 1:
         raise ValueError('One and only one of threshold and num_clusters should be specified.')
@@ -197,11 +197,13 @@ def constraint_similarity_clustering(similarity, neg_constraints, threshold=None
         # iterate through pairs, update clusters (when not violating any do-not-connect constraints)
         for p in similarity_of_pairs:
             clusters.union(p[0], p[1])
-    else:
+
+        return clusters.get_clusters()
+    elif num_clusters > 0:
         if num_clusters > num_samples:
             print('Warning: {} clusters can not be found on {} samples.'.format(num_clusters, num_samples))
 
-        # construct tuples (i, j, sim) for the pairs in the upper right triangle that meet similarity threshold
+        # construct tuples (i, j, sim) for all pairs in the upper right triangle
         similarity_of_pairs = [(r, c, similarity[r, c])
                                for r in range(num_samples-1)
                                for c in range(r+1, num_samples)]
@@ -218,7 +220,23 @@ def constraint_similarity_clustering(similarity, neg_constraints, threshold=None
         if cur_num_clusters > num_clusters:
             print('Warning: cannot get {} clusters, got {} instead.'.format(num_clusters, cur_num_clusters))
 
-    return clusters.get_clusters()
+        return clusters.get_clusters()
+    else:
+        # construct tuples (i, j, sim) for all pairs in the upper right triangle
+        similarity_of_pairs = [(r, c, similarity[r, c])
+                               for r in range(num_samples-1)
+                               for c in range(r+1, num_samples)]
+
+        # sort the pairs according to similarity (from high to low)
+        similarity_of_pairs.sort(key=lambda v: v[2], reverse=True)
+
+        # iterate through pairs, update clusters (when not violating any do-not-connect constraints)
+        clusters_hierarchy = [clusters.get_clusters()]
+        for p in similarity_of_pairs:
+            if clusters.union(p[0], p[1]):
+                clusters_hierarchy.append(clusters.get_clusters())
+
+        return clusters_hierarchy
 
 
 def main():
@@ -257,7 +275,13 @@ def main():
 
     # save results
     with TimedBlock('Converting clusters', verbose=args.verbose):
-        clusters = vector_cluster_repr(clusters, similarity.shape[0], start_idx=(0 if args.zero_based else 1))
+        if isinstance(clusters[0][0], list):
+            cluster_hierarchy = clusters
+            clusters = np.zeros((len(clusters), similarity.shape[0]), dtype=np.int32)
+            for i, c in enumerate(cluster_hierarchy):
+                clusters[i] = vector_cluster_repr(c, similarity.shape[0], start_idx=(0 if args.zero_based else 1))
+        else:
+            clusters = vector_cluster_repr(clusters, similarity.shape[0], start_idx=(0 if args.zero_based else 1))
     with TimedBlock('Saving results to {}'.format(args.output), verbose=args.verbose):
         save_ndarray(args.output, clusters, var_name='clusters')
 
