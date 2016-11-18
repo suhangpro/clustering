@@ -20,3 +20,21 @@ optional arguments:
   -n, --num-clusters    Number of clusters should be given if True
   -v, --verbose         Output runtime information when True
   ```
+
+# connectivity
+```
+usage: connectivity.py [-h] [-t] [-v] [-d DELIMITER] nodes runs
+
+Graph connectivity simulation.
+
+positional arguments:
+  nodes                 Number of nodes in the graph
+  runs                  Number of runs to simulate
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t, --trial-error     Use trial-and-error sampling
+  -v, --verbose         Output runtime information when True
+  -d DELIMITER, --delimiter DELIMITER
+                        Delimiter in output
+```
