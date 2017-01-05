@@ -120,12 +120,21 @@ class TimedBlock:
 def load_ndarray(file_path, dtype=np.float32):
     """Load nd-array from a file."""
     if file_path.endswith('.mat'):
-        from scipy.io import loadmat
-        mat = loadmat(file_path)
-        var_names = list(filter(lambda k: not k.startswith('__'), mat.keys()))
-        if len(var_names) != 1:
-            raise ValueError('There are {} variables in {}. 1 is expected.'.format(len(var_names), file_path))
-        mat = mat[var_names[0]].astype(dtype=dtype)
+        try:
+            from scipy.io import loadmat
+            mat = loadmat(file_path)
+            var_names = list(filter(lambda k: not k.startswith('__'), mat.keys()))
+            if len(var_names) != 1:
+                raise ValueError('There are {} variables in {}. 1 is expected.'.format(len(var_names), file_path))
+            mat = mat[var_names[0]].astype(dtype=dtype)
+        except NotImplementedError:
+            import h5py
+            f = h5py.File(file_path, 'r')
+            var_names = list(f.keys())
+            if len(var_names) != 1:
+                raise ValueError('There are {} variables in {}. 1 is expected.'.format(len(var_names), file_path))
+            mat = np.array(f[var_names[0]], dtype=dtype)
+            mat = mat.transpose(range(mat.ndim-1, -1, -1))
     elif file_path.endswith('.npy'):
         mat = np.load(file_path).astype(dtype=dtype)
     else:
