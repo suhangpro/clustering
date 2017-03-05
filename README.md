@@ -1,7 +1,7 @@
-# clustering
+# clustering (legacy version)
 ```
-usage: clustering.py [-h] [-c CONSTRAINTS] [-z] [-d] [-n] [-v]
-                     similarity output threshold
+usage: clustering_legacy.py [-h] [-c CONSTRAINTS] [-z] [-d] [-n] [-v]
+                            similarity output threshold
 
 Constraint Similarity-Based Clustering.
 
