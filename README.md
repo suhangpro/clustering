@@ -1,3 +1,41 @@
+# clustering 
+```
+usage: clustering.py [-h] -o OUTPUT [-f F] [-d D] [--do-not-link DO_NOT_LINK]
+                     [--must-link MUST_LINK] [-z] [-v VERBOSE] [-j N_JOBS]
+                     [--metric METRIC] [--nc NC] [--max-iter MAX_ITER]
+                     [--linkage LINKAGE]
+                     [-m {AffinityPropagation,AgglomerativeClustering,Birch,DBSCAN,KMeans,MiniBatchKMeans,MeanShift,SpectralClustering}]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUTPUT, --output OUTPUT
+                        output path
+  -f F, --feature F     path to feature matrix
+  -d D, --distance D    path to distance matrix, only compatible with methods:
+                        AffinityPropagation/DBSCAN/SpectralClustering
+  --do-not-link DO_NOT_LINK
+                        path to do-not-link constraint matrix, only works with
+                        methods: AffinityPropagation/DBSCAN/SpectralClustering
+  --must-link MUST_LINK
+                        path to must-link constraint matrix, only works with
+                        methods: AffinityPropagation/DBSCAN/SpectralClustering
+  -z, --zero-based      output with zero-based indexing if enabled
+  -v VERBOSE, --verbose VERBOSE
+                        verbose level 0|1[default]|2
+  -j N_JOBS, --n-jobs N_JOBS
+                        number of parallel jobs to run (default: -1)
+  --metric METRIC       metric for computing distances (default: euclidean)
+  --nc NC, --n-clusters NC
+                        number of clusters, required for AgglomerativeClusteri
+                        ng/Birch/KMeans/MiniBatchKMeans/SpectralClustering
+  --max-iter MAX_ITER   maximum number of iterations (default: KMeans:300/Mini
+                        BatchKMeans:100/AffinityPropagation:200)
+  --linkage LINKAGE     which linkage criterion to use (default: ward)
+  -m {AffinityPropagation,AgglomerativeClustering,Birch,DBSCAN,KMeans,MiniBatchKMeans,MeanShift,SpectralClustering}, --method {AffinityPropagation,AgglomerativeClustering,Birch,DBSCAN,KMeans,MiniBatchKMeans,MeanShift,SpectralClustering}
+                        specifies which clustering algorithm to use (default:
+                        KMeans)
+```
+
 # clustering (legacy version)
 ```
 usage: clustering_legacy.py [-h] [-c CONSTRAINTS] [-z] [-d] [-n] [-v]
@@ -19,7 +57,7 @@ optional arguments:
   -d, --distance        Distance is given rather than similarity
   -n, --num-clusters    Number of clusters should be given if True
   -v, --verbose         Output runtime information when True
-  ```
+```
 
 # connectivity
 ```
