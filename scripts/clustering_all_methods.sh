@@ -7,9 +7,14 @@
 # DO_NOT_LINK_PATH
 # OUTPUT_DIR
 # NUM_CLUSTERS
+# NUM_CORES
 
 if [ -z "$NUM_CLUSTERS" ]; then
     NUM_CLUSTERS=-1
+fi
+
+if [ -z "$NUM_CORES" ]; then
+    NUM_CORES=-1
 fi
 
 methods_available=(AffinityPropagation AgglomerativeClustering Birch DBSCAN KMeans MiniBatchKMeans MeanShift SpectralClustering)
@@ -28,5 +33,5 @@ do
             continue
         fi
     fi
-    python clustering.py -o "$OUTPUT_DIR" -f "$FEAT_PATH" -d "$DIST_PATH" --do-not-link "$DO_NOT_LINK_PATH" --nc $NUM_CLUSTERS -m $method
+    python clustering.py -o "$OUTPUT_DIR" -f "$FEAT_PATH" -d "$DIST_PATH" --do-not-link "$DO_NOT_LINK_PATH" --nc $NUM_CLUSTERS -j $NUM_CORES -m $method
 done

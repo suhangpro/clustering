@@ -94,6 +94,8 @@ def cluster(feat, dist, opts):
 def main():
     global args
     verbose = args.verbose > 0
+    if verbose:
+        print(args)
     dtype = np.float64
     inf_float = np.finfo(np.float32).max / 10  # TODO make sure that this somewhat arbitrary choice is not a problem
 
@@ -147,7 +149,7 @@ def main():
 
     # run clustering
     args.verbose = args.verbose >= 2
-    with TimedBlock(msg='Runing {}'.format(args.method), verbose=verbose):
+    with TimedBlock(msg='Running {}'.format(args.method), verbose=verbose):
         model = cluster(feat, dist, args)
     labels = model.labels_
     if not args.zero_based:
