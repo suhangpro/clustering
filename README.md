@@ -83,7 +83,7 @@ usage: rank_mi.py [-h] [-f FEATURE] [--mi MI] [-o OUTPUT] [-k TOP_K]
                   [-d DELIMITER] [-q NUM_BINS] [-n NUM_SAMPLES] [-z] [-v]
                   [-p {none,abs,square}]
                   [-t { mutual_info_score,adjusted_mutual_info_score,normalized_mutual_info_score}]
-                  [-s {random,smallest}]
+                  [-s {random,smallest}] [--use-percentile]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -110,5 +110,6 @@ optional arguments:
                         mutual information type [default: 'standard']
   -s {random,smallest}, --start-with {random,smallest}
                         starting strategy [default: 'smallest']
+  --use-percentile      discretize using percentile if specified
 ```
 
