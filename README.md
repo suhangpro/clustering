@@ -80,7 +80,7 @@ optional arguments:
 # feature ranking with mutual information
 ```
 usage: rank_mi.py [-h] -f FEATURE [--mi MI] [-o OUTPUT] [-k TOP_K]
-                  [-d DELIMITER] [-q NUM_BINS] [-z] [-v]
+                  [-d DELIMITER] [-q NUM_BINS] [-n NUM_SAMPLES] [-z] [-v]
                   [-p {none,abs,square}]
                   [-t { mutual_info_score,adjusted_mutual_info_score,normalized_mutual_info_score}]
                   [-s {random,smallest}]
@@ -95,11 +95,13 @@ optional arguments:
                         top features greedily selected wrt mutual information
                         [default: '-' (stdout)]
   -k TOP_K, --top-k TOP_K
-                        top k features [default: 1000]
+                        top k features [default: -1 (all)]
   -d DELIMITER, --delimiter DELIMITER
                         only used when output to stdout [default: ',']
   -q NUM_BINS, --num-bins NUM_BINS
                         quantization levels [default: 20]
+  -n NUM_SAMPLES, --num-samples NUM_SAMPLES
+                        number of samples to use [default: -1 (all)]
   -z, --zero-based      output with zero-based indexing if enabled
   -v, --verbose         verbose
   -p {none,abs,square}, --pre-process {none,abs,square}
@@ -108,6 +110,5 @@ optional arguments:
                         mutual information type [default: 'standard']
   -s {random,smallest}, --start-with {random,smallest}
                         starting strategy [default: 'smallest']
-
 ```
 
