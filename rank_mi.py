@@ -5,7 +5,7 @@ from utils import load_ndarray, save_ndarray, TimedBlock
 import sklearn.metrics
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-f', '--feature', required=True, help='path to feature matrix')
+parser.add_argument('-f', '--feature', default='', help='path to feature matrix')
 parser.add_argument('--mi', '--mutual-information', default='', help='output path for mutual information if specified')
 parser.add_argument('-o', '--output', default='-',
                     help='top reranked features greedily selected wrt mutual information [default: \'-\' (stdout)]')
@@ -29,46 +29,52 @@ def main():
     global args
     if args.verbose:
         print(args)
-    feat = load_ndarray(args.feature)
-    num_samples, num_feats = feat.shape
-    if args.num_samples != -1 and num_samples > args.num_samples:
-        feat = feat[np.random.choice(np.arange(num_samples), args.num_samples, replace=False)]
-    if args.pre_process == 'abs':
-        feat = np.abs(feat)
-    elif args.pre_process == 'square':
-        feat = np.power(feat, 2)
+    if args.feature != '':
+        feat = load_ndarray(args.feature)
+        num_samples, num_feats = feat.shape
+        if args.num_samples != -1 and num_samples > args.num_samples:
+            feat = feat[np.random.choice(np.arange(num_samples), args.num_samples, replace=False)]
+        if args.pre_process == 'abs':
+            feat = np.abs(feat)
+        elif args.pre_process == 'square':
+            feat = np.power(feat, 2)
 
-    # discretization
-    with TimedBlock('* Discretizing features into {} bins'.format(args.num_bins), verbose=args.verbose):
-        for i in range(num_feats):
-            feat[:, i] = np.digitize(feat[:, i], bins=np.linspace(feat[:, i].min(), feat[:, i].max(), args.num_bins+1))
-        feat = np.maximum(np.minimum(feat, args.num_bins), 1)
+        # discretization
+        with TimedBlock('* Discretizing features into {} bins'.format(args.num_bins), verbose=args.verbose):
+            for i in range(num_feats):
+                feat[:, i] = np.digitize(feat[:, i], bins=np.linspace(feat[:, i].min(), feat[:, i].max(), args.num_bins+1))
+            feat = np.maximum(np.minimum(feat, args.num_bins), 1)
 
-    # compute mutual information for feature pairs
-    with TimedBlock('* Computing mutual information', verbose=args.verbose):
-        mi = np.zeros((num_feats, num_feats), dtype=np.float32)
-        mi_fn = sklearn.metrics.__dict__[args.score_type]
-        n_calls = int(0.5 * (num_feats ** 2 + num_feats))
-        cnt = 0
-        if args.verbose:
-            print('')
-        for i in range(num_feats):
-            for j in range(i, num_feats):
-                mi[i, j] = mi_fn(feat[:, i], feat[:, j])
-                cnt += 1
-                if cnt % 1000 == 0 and args.verbose:
-                    print('.', end='', flush=True)
-                if cnt % 80000 == 0 and args.verbose:
-                    print(' {}/{}'.format(cnt, n_calls), flush=True)
-        mi += np.triu(mi, 1).T  # fill lower triangle part to make it symmetrical
-        if args.mi != '':
-            try:
-                os.makedirs(os.path.split(args.mi)[0])
-            except OSError:
-                pass
-            save_ndarray(args.mi, mi, var_name=args.score_type)
+        # compute mutual information for feature pairs
+        with TimedBlock('* Computing mutual information', verbose=args.verbose):
+            mi = np.zeros((num_feats, num_feats), dtype=np.float32)
+            mi_fn = sklearn.metrics.__dict__[args.score_type]
+            n_calls = int(0.5 * (num_feats ** 2 + num_feats))
+            cnt = 0
+            if args.verbose:
+                print('')
+            for i in range(num_feats):
+                for j in range(i, num_feats):
+                    mi[i, j] = mi_fn(feat[:, i], feat[:, j])
+                    cnt += 1
+                    if cnt % 1000 == 0 and args.verbose:
+                        print('.', end='', flush=True)
+                    if cnt % 80000 == 0 and args.verbose:
+                        print(' {}/{}'.format(cnt, n_calls), flush=True)
+            mi += np.triu(mi, 1).T  # fill lower triangle part to make it symmetrical
+            if args.mi != '':
+                try:
+                    os.makedirs(os.path.split(args.mi)[0])
+                except OSError:
+                    pass
+                save_ndarray(args.mi, mi, var_name=args.score_type)
+    else:
+        if args.mi == '':
+            raise ValueError('either feature or pre-computed mutual-information should be provided')
+        mi = load_ndarray(args.mi)
 
     # find top k features
+    num_feats = mi.shape[0]
     top_k = num_feats if (args.top_k > num_feats or args.top_k == -1) else args.top_k
     ranking = []
     with TimedBlock('* Choosing top {} features'.format(top_k), verbose=args.verbose):
