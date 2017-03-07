@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--feature', required=True, help='path to feature matrix')
 parser.add_argument('--mi', '--mutual-information', default='', help='output path for mutual information if specified')
 parser.add_argument('-o', '--output', default='-',
-                    help='top features greedily selected wrt mutual information [default: \'-\' (stdout)]')
+                    help='top reranked features greedily selected wrt mutual information [default: \'-\' (stdout)]')
 parser.add_argument('-k', '--top-k', type=int, default=-1, help='top k features [default: -1 (all)]')
 parser.add_argument('-d', '--delimiter', default=',', help='only used when output to stdout [default: \',\']')
 parser.add_argument('-q', '--num-bins', type=int, default=20, help='quantization levels [default: 20]')
@@ -70,6 +70,7 @@ def main():
 
     # find top k features
     top_k = num_feats if (args.top_k > num_feats or args.top_k == -1) else args.top_k
+    ranking = []
     with TimedBlock('* Choosing top {} features'.format(top_k), verbose=args.verbose):
         chosen_mask = np.zeros(num_feats, dtype=np.bool)
         if args.start_with == 'smallest':
@@ -84,17 +85,18 @@ def main():
             idx_in_unchosen = np.argmin(mi[chosen[:, np.newaxis], unchosen].max(axis=0))
             idx_to_choose = (np.cumsum(1 - chosen_mask) - idx_in_unchosen > 0).nonzero()[0][0]
             chosen_mask[idx_to_choose] = True
-        chosen = chosen_mask.nonzero()[0]
+            ranking.append(idx_to_choose)
+        ranking = np.array(ranking, dtype=np.int32)
         if not args.zero_based:
-            chosen += 1
+            ranking += 1
         if args.output == '-':
-            print(args.delimiter.join([str(v) for v in chosen]))
+            print(args.delimiter.join([str(v) for v in ranking]))
         else:
             try:
                 os.makedirs(os.path.split(args.output)[0])
             except OSError:
                 pass
-            save_ndarray(args.output, np.array(chosen), var_name='feature')
+            save_ndarray(args.output, np.array(ranking), var_name='feature')
 
 
 if __name__ == '__main__':
