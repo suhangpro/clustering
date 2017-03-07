@@ -9,7 +9,7 @@ parser.add_argument('-f', '--feature', required=True, help='path to feature matr
 parser.add_argument('--mi', '--mutual-information', default='', help='output path for mutual information if specified')
 parser.add_argument('-o', '--output', default='-',
                     help='top features greedily selected wrt mutual information [default: \'-\' (stdout)]')
-parser.add_argument('-k', '--top-k', type=int, default=1000, help='top k features [default: 1000]')
+parser.add_argument('-k', '--top-k', type=int, default=-1, help='top k features [default: -1 (all)]')
 parser.add_argument('-d', '--delimiter', default=',', help='only used when output to stdout [default: \',\']')
 parser.add_argument('-q', '--num-bins', type=int, default=20, help='quantization levels [default: 20]')
 parser.add_argument('-n', '--num-samples', type=int, default=-1, help='number of samples to use [default: -1 (all)]')
@@ -27,6 +27,8 @@ args = parser.parse_args()
 
 def main():
     global args
+    if args.verbose:
+        print(args)
     feat = load_ndarray(args.feature)
     num_samples, num_feats = feat.shape
     if args.num_samples != -1 and num_samples > args.num_samples:
@@ -37,13 +39,13 @@ def main():
         feat = np.power(feat, 2)
 
     # discretization
-    with TimedBlock('Discretizing features into {} bins'.format(args.num_bins), verbose=args.verbose):
+    with TimedBlock('* Discretizing features into {} bins'.format(args.num_bins), verbose=args.verbose):
         for i in range(num_feats):
             feat[:, i] = np.digitize(feat[:, i], bins=np.linspace(feat[:, i].min(), feat[:, i].max(), args.num_bins+1))
         feat = np.maximum(np.minimum(feat, args.num_bins), 1)
 
     # compute mutual information for feature pairs
-    with TimedBlock('Computing mutual information', verbose=args.verbose):
+    with TimedBlock('* Computing mutual information', verbose=args.verbose):
         mi = np.zeros((num_feats, num_feats), dtype=np.float32)
         mi_fn = sklearn.metrics.__dict__[args.score_type]
         n_calls = int(0.5 * (num_feats ** 2 + num_feats))
@@ -67,7 +69,8 @@ def main():
             save_ndarray(args.mi, mi, var_name=args.score_type)
 
     # find top k features
-    with TimedBlock('Choosing top {} features'.format(args.top_k), verbose=args.verbose):
+    top_k = num_feats if (args.top_k > num_feats or args.top_k == -1) else args.top_k
+    with TimedBlock('* Choosing top {} features'.format(top_k), verbose=args.verbose):
         chosen_mask = np.zeros(num_feats, dtype=np.bool)
         if args.start_with == 'smallest':
             chosen_mask[np.argmin(mi) % num_feats] = True
@@ -75,7 +78,7 @@ def main():
             chosen_mask[np.random.randint(num_feats)] = True
         else:
             raise ValueError('Unknown value for start_with: {}'.format(args.start_with))
-        for i in range(1, args.top_k):
+        for i in range(1, top_k):
             chosen = chosen_mask.nonzero()[0]
             unchosen = (1 - chosen_mask).nonzero()[0]
             idx_in_unchosen = np.argmin(mi[chosen[:, np.newaxis], unchosen].max(axis=0))
