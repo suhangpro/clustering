@@ -1,6 +1,6 @@
 import argparse
 import numpy as np
-from clustering import DisjointSet
+from utils import DisjointSet
 
 
 def num_edges_make_connected(n, trial_and_error=False):
@@ -25,8 +25,14 @@ def num_edges_make_connected(n, trial_and_error=False):
     return num_edges
 
 
-def connectivity_simulation(n, num_runs, trial_and_error=False, verbose=True):
+def connectivity_simulation(n, num_runs, sample_scheme='trial_and_error', verbose=True):
     num_edges = []
+    if sample_scheme == 'trial_and_error':
+        trial_and_error = True
+    elif sample_scheme == 'pre_shuffle':
+        trial_and_error = False
+    else:
+        raise ValueError('Unknown sampling scheme: {}'.format(sample_scheme))
     for i in range(num_runs):
         num_edges.append(num_edges_make_connected(n, trial_and_error))
         if verbose and (i + 1) % 10 == 0:
@@ -51,14 +57,15 @@ def main():
     parser = argparse.ArgumentParser(description='Graph connectivity simulation.')
     parser.add_argument('nodes', type=int, help='Number of nodes in the graph')
     parser.add_argument('runs',type=int, help='Number of runs to simulate')
-    parser.add_argument('-t', '--trial-error', action='store_true', help='Use trial-and-error sampling')
     parser.add_argument('-v', '--verbose', action='store_true', help='Output runtime information when True')
     parser.add_argument('-d', '--delimiter', type=str, default=', ', help='Delimiter in output')
+    parser.add_argument('-s', '--sample-scheme', default='trial_and_error', choices=('pre_shuffle', 'trial_and_error'),
+                        help='Sampling scheme [default: \'trial_and_error\']')
     args = parser.parse_args()
 
-    connected_ratio = connectivity_simulation(args.nodes, args.runs, args.trial_error, args.verbose)
+    connected_ratio = connectivity_simulation(args.nodes, args.runs, args.sample_scheme, args.verbose)
     for e, r in connected_ratio:
-        print('{:.4f}{}{}'.format(e, args.delimiter, r))
+        print('{:.6f}{}{}'.format(e, args.delimiter, r))
 
 
 if __name__ == '__main__':

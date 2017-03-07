@@ -61,7 +61,9 @@ optional arguments:
 
 # connectivity
 ```
-usage: connectivity.py [-h] [-t] [-v] [-d DELIMITER] nodes runs
+usage: connectivity.py [-h] [-v] [-d DELIMITER]
+                       [-s {pre_shuffle,trial_and_error}]
+                       nodes runs
 
 Graph connectivity simulation.
 
@@ -71,10 +73,11 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t, --trial-error     Use trial-and-error sampling
   -v, --verbose         Output runtime information when True
   -d DELIMITER, --delimiter DELIMITER
                         Delimiter in output
+  -s {pre_shuffle,trial_and_error}, --sample-scheme {pre_shuffle,trial_and_error}
+                        Sampling scheme [default: 'trial_and_error']
 ```
 
 # feature ranking with mutual information
