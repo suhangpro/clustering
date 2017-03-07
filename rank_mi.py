@@ -22,6 +22,7 @@ parser.add_argument('-t', '--score-type', default='mutual_info_score',
                     help='mutual information type [default: \'standard\']')
 parser.add_argument('-s', '--start-with', default='smallest', choices=('random', 'smallest'),
                     help='starting strategy [default: \'smallest\']')
+parser.add_argument('--use-percentile', action='store_true', help='discretize using percentile if specified')
 args = parser.parse_args()
 
 
@@ -41,6 +42,8 @@ def main():
 
         # discretization
         with TimedBlock('* Discretizing features into {} bins'.format(args.num_bins), verbose=args.verbose):
+            if args.use_percentile:
+                feat = np.argsort(np.argsort(feat, axis=0), axis=0)
             for i in range(num_feats):
                 feat[:, i] = np.digitize(feat[:, i], bins=np.linspace(feat[:, i].min(), feat[:, i].max(), args.num_bins+1))
             feat = np.maximum(np.minimum(feat, args.num_bins), 1)
