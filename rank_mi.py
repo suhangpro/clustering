@@ -12,6 +12,7 @@ parser.add_argument('-o', '--output', default='-',
 parser.add_argument('-k', '--top-k', type=int, default=1000, help='top k features [default: 1000]')
 parser.add_argument('-d', '--delimiter', default=',', help='only used when output to stdout [default: \',\']')
 parser.add_argument('-q', '--num-bins', type=int, default=20, help='quantization levels [default: 20]')
+parser.add_argument('-n', '--num-samples', type=int, default=-1, help='number of samples to use [default: -1 (all)]')
 parser.add_argument('-z', '--zero-based', action='store_true', help='output with zero-based indexing if enabled')
 parser.add_argument('-v', '--verbose', action='store_true', help='verbose')
 parser.add_argument('-p', '--pre-process', default='none', choices=('none', 'abs', 'square'),
@@ -28,6 +29,8 @@ def main():
     global args
     feat = load_ndarray(args.feature)
     num_samples, num_feats = feat.shape
+    if args.num_samples != -1 and num_samples > args.num_samples:
+        feat = feat[np.random.choice(np.arange(num_samples), args.num_samples, replace=False)]
     if args.pre_process == 'abs':
         feat = np.abs(feat)
     elif args.pre_process == 'square':
