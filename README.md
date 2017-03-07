@@ -79,7 +79,7 @@ optional arguments:
 
 # feature ranking with mutual information
 ```
-usage: rank_mi.py [-h] -f FEATURE [--mi MI] [-o OUTPUT] [-k TOP_K]
+usage: rank_mi.py [-h] [-f FEATURE] [--mi MI] [-o OUTPUT] [-k TOP_K]
                   [-d DELIMITER] [-q NUM_BINS] [-n NUM_SAMPLES] [-z] [-v]
                   [-p {none,abs,square}]
                   [-t { mutual_info_score,adjusted_mutual_info_score,normalized_mutual_info_score}]
@@ -92,8 +92,8 @@ optional arguments:
   --mi MI, --mutual-information MI
                         output path for mutual information if specified
   -o OUTPUT, --output OUTPUT
-                        top features greedily selected wrt mutual information
-                        [default: '-' (stdout)]
+                        top reranked features greedily selected wrt mutual
+                        information [default: '-' (stdout)]
   -k TOP_K, --top-k TOP_K
                         top k features [default: -1 (all)]
   -d DELIMITER, --delimiter DELIMITER
