@@ -76,15 +76,16 @@ def main():
     # find top k features
     num_feats = mi.shape[0]
     top_k = num_feats if (args.top_k > num_feats or args.top_k == -1) else args.top_k
-    ranking = []
     with TimedBlock('* Choosing top {} features'.format(top_k), verbose=args.verbose):
         chosen_mask = np.zeros(num_feats, dtype=np.bool)
         if args.start_with == 'smallest':
-            chosen_mask[np.argmin(mi) % num_feats] = True
+            idx_to_choose = np.argmin(mi) % num_feats
         elif args.start_with == 'random':
-            chosen_mask[np.random.randint(num_feats)] = True
+            idx_to_choose = np.random.randint(num_feats)
         else:
             raise ValueError('Unknown value for start_with: {}'.format(args.start_with))
+        chosen_mask[idx_to_choose] = True
+        ranking = [idx_to_choose]
         for i in range(1, top_k):
             chosen = chosen_mask.nonzero()[0]
             unchosen = (1 - chosen_mask).nonzero()[0]
