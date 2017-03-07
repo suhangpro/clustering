@@ -76,3 +76,38 @@ optional arguments:
   -d DELIMITER, --delimiter DELIMITER
                         Delimiter in output
 ```
+
+# feature ranking with mutual information
+```
+usage: rank_mi.py [-h] -f FEATURE [--mi MI] [-o OUTPUT] [-k TOP_K]
+                  [-d DELIMITER] [-q NUM_BINS] [-z] [-v]
+                  [-p {none,abs,square}]
+                  [-t { mutual_info_score,adjusted_mutual_info_score,normalized_mutual_info_score}]
+                  [-s {random,smallest}]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f FEATURE, --feature FEATURE
+                        path to feature matrix
+  --mi MI, --mutual-information MI
+                        output path for mutual information if specified
+  -o OUTPUT, --output OUTPUT
+                        top features greedily selected wrt mutual information
+                        [default: '-' (stdout)]
+  -k TOP_K, --top-k TOP_K
+                        top k features [default: 1000]
+  -d DELIMITER, --delimiter DELIMITER
+                        only used when output to stdout [default: ',']
+  -q NUM_BINS, --num-bins NUM_BINS
+                        quantization levels [default: 20]
+  -z, --zero-based      output with zero-based indexing if enabled
+  -v, --verbose         verbose
+  -p {none,abs,square}, --pre-process {none,abs,square}
+                        feature pre-processing [default: 'none']
+  -t { mutual_info_score,adjusted_mutual_info_score,normalized_mutual_info_score}, --score-type { mutual_info_score,adjusted_mutual_info_score,normalized_mutual_info_score}
+                        mutual information type [default: 'standard']
+  -s {random,smallest}, --start-with {random,smallest}
+                        starting strategy [default: 'smallest']
+
+```
+
