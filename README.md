@@ -3,7 +3,7 @@
 usage: clustering.py [-h] -o OUTPUT [-f F] [-d D] [--do-not-link DO_NOT_LINK]
                      [--must-link MUST_LINK] [-z] [-v VERBOSE] [-j N_JOBS]
                      [--metric METRIC] [--nc NC] [--max-iter MAX_ITER]
-                     [--linkage LINKAGE]
+                     [--linkage LINKAGE] [-u]
                      [-m {AffinityPropagation,AgglomerativeClustering,Birch,DBSCAN,KMeans,MiniBatchKMeans,MeanShift,SpectralClustering}]
 
 optional arguments:
@@ -31,6 +31,7 @@ optional arguments:
   --max-iter MAX_ITER   maximum number of iterations (default: KMeans:300/Mini
                         BatchKMeans:100/AffinityPropagation:200)
   --linkage LINKAGE     which linkage criterion to use (default: ward)
+  -u, --update          unless enabled, skip if output already exists
   -m {AffinityPropagation,AgglomerativeClustering,Birch,DBSCAN,KMeans,MiniBatchKMeans,MeanShift,SpectralClustering}, --method {AffinityPropagation,AgglomerativeClustering,Birch,DBSCAN,KMeans,MiniBatchKMeans,MeanShift,SpectralClustering}
                         specifies which clustering algorithm to use (default:
                         KMeans)

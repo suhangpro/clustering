@@ -33,6 +33,7 @@ parser.add_argument('--nc', '--n-clusters', default=-1, type=int, help='number o
 parser.add_argument('--max-iter', default=-1, type=int, help='maximum number of iterations (default: '
                                                              'KMeans:300/MiniBatchKMeans:100/AffinityPropagation:200)')
 parser.add_argument('--linkage', default='ward', help='which linkage criterion to use (default: ward)')
+parser.add_argument('-u', '--update', action='store_true', help='unless enabled, skip if output already exists')
 parser.add_argument('-m', '--method', default='KMeans', choices=methods_available,
                     help='specifies which clustering algorithm to use (default: KMeans)')
 args = parser.parse_args()
@@ -133,6 +134,10 @@ def main():
             pass
         args.output = os.path.join(args.output, task_name[:-4]+'_{}'.format(args.method)+task_name[-4:])
     else:
+        if (not args.update) and os.path.isfile(args.ouput):
+            if verbose:
+                print('Skipping since output already exist.')
+            return
         try:
             os.makedirs(os.path.split(args.output)[0])
         except OSError:
