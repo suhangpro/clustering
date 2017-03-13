@@ -132,6 +132,11 @@ def main():
         except OSError:
             pass
         args.output = os.path.join(args.output, task_name[:-4]+'_{}'.format(args.method)+task_name[-4:])
+    else:
+        try:
+            os.makedirs(os.path.split(args.output)[0])
+        except OSError:
+            pass
 
     # some consolidation
     if (feat is not None) + (dist is not None) != 1:
