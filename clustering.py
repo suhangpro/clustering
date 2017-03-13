@@ -134,7 +134,7 @@ def main():
             pass
         args.output = os.path.join(args.output, task_name[:-4]+'_{}'.format(args.method)+task_name[-4:])
     else:
-        if (not args.update) and os.path.isfile(args.ouput):
+        if (not args.update) and os.path.isfile(args.output):
             if verbose:
                 print('Skipping since output already exist.')
             return
